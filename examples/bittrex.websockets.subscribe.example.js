@@ -37,7 +37,7 @@ async function main() {
             data.A.forEach(function (data_for) {
               // console.log("Market Update for " + data_for.MarketName, data_for.Sells);
               const fileName = `${data_for.MarketName}.log`.toLowerCase();
-              fs.appendFile(fileName, JSON.stringify(data_for), function (err) {
+              fs.appendFile(fileName, JSON.stringify(data_for) + "\n", function (err) {
                 if (err) throw err;
                 // console.log(`Added data to ${fileName} file.`);
               });
