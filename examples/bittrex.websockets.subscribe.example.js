@@ -1,5 +1,6 @@
 const bittrex = require("../node.bittrex.api");
 const fs = require("fs");
+const moment = require("moment");
 
 async function getMarkets() {
   return new Promise((res, rej) => {
@@ -13,6 +14,7 @@ async function getMarkets() {
 
 async function main() {
   const markets = await getMarkets();
+  let lastDate = "";
   
   console.log("Connecting ....");
   bittrex.websockets.client(function (client) {
@@ -36,26 +38,28 @@ async function main() {
           if (data.M === "updateExchangeState") {
             data.A.forEach(function (data_for) {
               // console.log("Market Update for " + data_for.MarketName, data_for.Sells);
-              const fileName = `${data_for.MarketName}.log`.toLowerCase();
+              const timestamp = moment.now();
+              const today = moment.unix(timestamp / 1000).format("YYYYMMDD");
+              const fileName = `${today}/${data_for.MarketName}.log`.toLowerCase();
+              if (lastDate !== today) {
+                lastDate = today;
+                try {
+                  fs.mkdirSync(today);
+                } catch (e) {
+                  console.error(e);
+                }
+              }
+              data_for["timestamp"] = timestamp;
               fs.appendFile(fileName, JSON.stringify(data_for) + "\n", function (err) {
                 if (err) throw err;
-                // console.log(`Added data to ${fileName} file.`);
               });
               
             });
           }
         });
-        
-        // bittrex.websockets.subscribe(["BTC-OMG"], function (data, client) {
-        //   if (data.M === "updateExchangeState") {
-        //     data.A.forEach(function (data_for) {
-        //       console.log("Market Update for " + data_for.MarketName);
-        //     });
-        //   }
-        // });
       }
     }
   });
 }
 
-main().then(() => console.log("done")).catch(error => console.error(error));
+main().then(() => console.log("done")).catch(e => console.error(e));
